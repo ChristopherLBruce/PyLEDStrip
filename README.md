@@ -1,2 +1,2 @@
 # PyLEDStrip
-Simluates a WS2912 LED strip using PyQt
+Simluates an RGB LED strip using PyQt
