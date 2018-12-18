@@ -11,7 +11,6 @@ These patterns function by drawing the entire strip at once
 
 import time
 import random
-from collections import deque
 
 from . import const, common
 from .color import Color
@@ -42,8 +41,8 @@ def colorWipe( strip, wait_ms = 25 ):
 
 	while True:
 		for color in [ const.red, const.green, const.blue ]:
-			for pixel in range( 0, strip.numPixels( ) ):
-				strip.setPixelColor( pixel, color )
+			for pixel in range( 0, strip.get_num_leds( ) ):
+				strip.set_led_color( pixel, color )
 
 				if not strip.testing:
 					return True
@@ -73,8 +72,8 @@ def theaterChase( strip, color = const.white, wait_ms = 50 ):
 
 	while True:
 		for q in range( 3 ):
-			for i in range( 0, strip.numPixels( ), 3 ):
-				strip.setPixelColor( i + q, color )
+			for i in range( 0, strip.get_num_leds( ), 3 ):
+				strip.set_led_color( i + q, color )
 
 			if not strip.testing:
 				return True
@@ -82,8 +81,8 @@ def theaterChase( strip, color = const.white, wait_ms = 50 ):
 			strip.show( )
 			time.sleep( wait_ms / 1000.0 )
 
-			for i in range( 0, strip.numPixels( ), 3 ):
-				strip.setPixelColor( i + q, 0)
+			for i in range( 0, strip.get_num_leds( ), 3 ):
+				strip.set_led_color( i + q, 0)
 
 
 def rainbow( strip, wait_ms = 10 ):
@@ -105,8 +104,8 @@ def rainbow( strip, wait_ms = 10 ):
 
 	while True:
 		for i in range( 256 ):
-			for pixel in range( strip.numPixels( ) ):
-				strip.setPixelColor( pixel, common.wheel( ( i + pixel ) & 255 ) )
+			for pixel in range( strip.get_num_leds( ) ):
+				strip.set_led_color( pixel, common.wheel( ( i + pixel ) & 255 ) )
 
 			if not strip.testing:
 				return True
@@ -134,8 +133,8 @@ def rainbowCycle( strip, wait_ms = 10 ):
 
 	while True:
 		for i in range( 0, 256, 4 ):
-			for pixel in range( strip.numPixels( ) ):
-				strip.setPixelColor( pixel, common.wheel( ( int( pixel * 256 / strip.numPixels( ) ) + i ) & 255 ) )
+			for pixel in range( strip.get_num_leds( ) ):
+				strip.set_led_color( pixel, common.wheel( ( int( pixel * 256 / strip.get_num_leds( ) ) + i ) & 255 ) )
 
 			if not strip.testing:
 				return True
@@ -164,9 +163,9 @@ def theaterChaseRainbow( strip, wait_ms = 50 ):
 	while True:
 		for j in range( 0, 256, 4 ):
 			for q in range( 3 ):
-				for pixel in range( 0, strip.numPixels( ), 3 ):
+				for pixel in range( 0, strip.get_num_leds( ), 3 ):
 					color = common.wheel( ( pixel + j ) % 255 )
-					strip.setPixelColor( pixel + q, color )		# turn ever 3rd pixel on
+					strip.set_led_color( pixel + q, color )		# turn ever 3rd pixel on
 
 				if not strip.testing:
 					return True
@@ -174,8 +173,8 @@ def theaterChaseRainbow( strip, wait_ms = 50 ):
 				strip.show( )
 				time.sleep( wait_ms / 1000.0 )
 
-				for pixel in range( 0, strip.numPixels( ), 3 ):
-					strip.setPixelColor( pixel + q , const.black )			# turn ever 3rd pixel off
+				for pixel in range( 0, strip.get_num_leds( ), 3 ):
+					strip.set_led_color( pixel + q , const.black )			# turn ever 3rd pixel off
 
 
 def randColors( strip, wait_ms = 50 ):
@@ -199,12 +198,12 @@ def randColors( strip, wait_ms = 50 ):
 		Chris Bruce, chris.bruce@dsvolition.com, 12/3/2018
 	"""
 
-	num_pixels		= strip.numPixels( )
+	num_pixels		= strip.get_num_leds( )
 
 	while True:
 		for p in range( num_pixels ):
 			rgb		= tuple( [ random.randint( 0, 255 ) for x in [ 'r', 'g', 'b' ] ] )
-			strip.setPixelColor( p, Color( *rgb ) )
+			strip.set_led_color( p, Color( *rgb ) )
 
 		if not strip.testing:
 			return True
@@ -240,12 +239,12 @@ def pulse( strip, color = const.white, length = 5, wait_ms = 25 ):
 	"""
 
 	# Creates a pulse as an array of pixel colors
-	num_pixels	= strip.numPixels( )
+	num_pixels	= strip.get_num_leds( )
 	pixels		= Pixels( [ const.black ] * num_pixels )
 
 	for i in range( length ):
 		fade						= 1.0 - ( float( i + 1 ) / length )
-		pixels.colors[ i ]	= pixels.colors[ i ].blend( color, bias = fade )
+		pixels.colors[ i ].blend( color, bias = fade )
 
 	while True:
 		if not strip.testing:
@@ -276,7 +275,7 @@ def pulses( strip, color = const.white, num = 4, wait_ms = 25 ):
 		Chris Bruce, chris.bruce@dsvolition.com, 12/3/2018
 	"""
 
-	num_pixels	= strip.numPixels( )
+	num_pixels	= strip.get_num_leds( )
 	pixels		= Pixels( [ const.black ] * num_pixels )
 
 	# Creates multiple, evenly-spaced pulses across the entire strip
@@ -319,9 +318,9 @@ def cylon( strip, color = const.red, length = 10, wait_ms = 50 ):
 		Chris Bruce, chris.bruce@dsvolition.com, 12/3/2018
 	"""
 
-	num_pixels	= strip.numPixels( )
+	num_pixels	= strip.get_num_leds( )
 	pixels		= Pixels( [ const.black ] * num_pixels )
-	fade			= 1.0 - ( 1.0 / length )
+	bias			= 1.0 - ( 1.0 / length )
 	loop			= common.create_loop( num_pixels )
 
 	while True:
@@ -334,7 +333,7 @@ def cylon( strip, color = const.red, length = 10, wait_ms = 50 ):
 			pixels.draw( strip )
 			time.sleep( wait_ms / 1000.0 )
 
-			pixels = pixels.blend( const.black, bias = fade )
+			pixels.blend( const.black, bias = bias )
 
 	return True
 
@@ -362,7 +361,7 @@ def cylon2( strip, color = const.red, length = 10, wait_ms = 50 ):
 		Chris Bruce, chris.bruce@dsvolition.com, 12/3/2018
 	"""
 
-	num_pixels	= strip.numPixels( )
+	num_pixels	= strip.get_num_leds( )
 	pixels		= Pixels( [ const.black ] * num_pixels )
 	fade			= 1.0 - ( 1.0 / length )
 
@@ -378,14 +377,13 @@ def cylon2( strip, color = const.red, length = 10, wait_ms = 50 ):
 			pixels.draw( strip )
 			time.sleep( wait_ms / 1000.0 )
 
-			pixels = pixels.blend( const.black, bias = fade )
+			pixels.blend( const.black, bias = fade )
 
 	return True
 
 
 def randFade( strip, color1 = Color( 239, 247, 255 ), color2 = const.black,
-	rate = 0.05, fade_out = 25, wait_ms = 100
-	):
+		rate = 0.05, fade_out = 25, wait_ms = 100 ):
 	"""
 	[description]
 
@@ -410,7 +408,7 @@ def randFade( strip, color1 = Color( 239, 247, 255 ), color2 = const.black,
 		Chris Bruce, chris.bruce@dsvolition.com, 12/3/2018
 	"""
 
-	num_pixels  = strip.numPixels( )
+	num_pixels  = strip.get_num_leds( )
 	pixels		= Pixels( [ color2 ] * num_pixels )
 	bias			= 1.0 - ( 1.0 / fade_out )
 
@@ -426,7 +424,7 @@ def randFade( strip, color1 = Color( 239, 247, 255 ), color2 = const.black,
 		pixels.draw( strip )
 		time.sleep( wait_ms / 1000.0 )
 
-		pixels = pixels.blend( color2, bias = bias )
+		pixels.blend( color2, bias = bias )
 
 	return True
 
@@ -438,9 +436,10 @@ def fire( strip, color1 = const.yellow, color2 = const.red,
 	randFade( strip, color1 = color1, color2 = color2,
 	rate = rate, fade_out = fade_out, wait_ms = wait_ms )
 
-	return true
+	return True
 
-def softFade( strip, color1 = Color( 0, 63, 255 ), color2 = Color( 255, 127, 255 ), num = 4, width = None,
+
+def softFade( strip, color1 = Color( 0, 63, 255 ), color2 = Color( 255, 127, 255 ), width = None,
 	fade_in = 90, fade_out = 150, wait_ms = 33.33
 	):
 	"""
@@ -454,7 +453,6 @@ def softFade( strip, color1 = Color( 0, 63, 255 ), color2 = Color( 255, 127, 255
 
 	**Keword Arguments:**
 
-		:``num``:		`float` [description]
 		:``width``:		`int` [description]
 		:``fade_in``:	`int` [description]
 		:``fade_out``:	`int` [description]
@@ -469,7 +467,7 @@ def softFade( strip, color1 = Color( 0, 63, 255 ), color2 = Color( 255, 127, 255
 		Chris Bruce, chris.bruce@dsvolition.com, 12/3/2018
 	"""
 
-	num_pixels	= strip.numPixels( )
+	num_pixels	= strip.get_num_leds( )
 
 	if not width:
 		width		= num_pixels

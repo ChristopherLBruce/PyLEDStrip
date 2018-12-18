@@ -1,8 +1,12 @@
+"""[summary]
+
+Returns:
+	[type] -- [description]
+"""
+
 import time
-import random
 from collections import deque
 
-from . import const, common
 from .color import Color
 
 
@@ -45,44 +49,78 @@ class Pixels( ):
 
 
 	def __add__( self, other ):
-		if isinstance( other, Pixels ):
-			other	= other.colors
-
 		if isinstance( other, Color ):
-			other = [ other ] * len( self.colors )
+			other = Pixels( [ other ] * len( self.colors ) )
 
-		return [ c1 + c2 for c1, c2 in zip( self.colors, other ) ]
+		if not isinstance( other, Pixels ):
+			return None
+
+		return Pixels( [ c1 + c2 for c1, c2 in zip( self.colors, other.colors ) ] )
 
 
 	def __sub__( self, other ):
-		if isinstance( other, Pixels ):
-			other	= other.colors
-
 		if isinstance( other, Color ):
-			other = [ other ] * len( self.colors )
+			other = Pixels( [ other ] * len( self.colors ) )
 
-		return [ c1 - c2 for c1, c2 in zip( self.colors, other ) ]
+		if not isinstance( other, Pixels ):
+			return None
+
+		return Pixels( [ c1 - c2 for c1, c2 in zip( self.colors, other.colors ) ] )
+
+
+	def __mul__( self, others ):
+		if isinstance( other, Color ):
+			other = Pixels( [ other ] * len( self.colors ) )
+
+		if not isinstance( other, Pixels ):
+			return None
+
+		return Pixels( [ c1 * c2 for c1, c2 in zip( self.colors, other.colors ) ] )
 
 
 	def add( self, other ):
-		self.colors = self + other
+		if isinstance( other, Color ):
+			for c1, c2 in zip ( self.colors, [ other ] * len( self.colors ) ):
+				c1.add( c2 )
+		if isinstance( other, Pixels ):
+			for c1, c2 in zip ( self.colors, other.colors ):
+				c1.add( c2 )
 
-		return self.colors
+		return self
 
 
 	def subtract( self, other ):
-		self.colors	= self - other
+		if isinstance( other, Color ):
+			for c1, c2 in zip( self.colors, [ other ] * len( self.colors ) ):
+				c1.subtract( c2 )
+		if isinstance( other, Pixels ):
+			for c1, c2 in zip ( self.colors, other.colors ):
+				c1.subtract( c2 )
 
-		return self.colors
+		return self
+
+
+	def multiply( self, other ):
+		if isinstance( other, Color ):
+			for c1, c2 in zip( self.colors, [ other ] * len( self.colors ) ):
+				c1.multiply( c2 )
+		if isinstance( other, Pixels ):
+			for c1, c2 in zip( self.colors, other.colors ):
+				c1.multiply( c2 )
+
+		return self
 
 
 	def blend( self, other, bias = 0.5 ):
 		if isinstance( other, Color ):
-			other	= [ other ] * len( self.colors )
+			colors = [ other ] * len( self.colors )
 		if isinstance( other, Pixels ):
-			other = other.colors
+			colors = other.colors
 
-		return [ c1.blend( c2, bias ) for c1, c2 in zip ( self.colors, other ) ]
+		for c1, c2 in zip( self.colors, colors ):
+			c1.blend( c2, bias )
+
+		return self
 
 
 	def draw( self, strip ):
@@ -103,7 +141,7 @@ class Pixels( ):
 		"""
 
 		for i, color in enumerate( self.colors ):
-			strip.setPixelColor( i, color )
+			strip.set_led_color( i, color )
 
 		strip.show( )
 
@@ -153,13 +191,13 @@ class Pixels( ):
 		"""
 
 		while True:
-			for _pixel in range( len( self.pixels ) ):
-				if not self.strip.testing:
+			for _pixel in range( len( self.colors ) ):
+				if not strip.testing:
 					return True
 
 				self.draw( strip )
 				time.sleep( wait_ms / 1000.0 )
 
-				pixels	= self.offset( offset = offset )
+				self.offset( offset = offset )
 
-		return self.colors
+		return self

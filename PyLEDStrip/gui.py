@@ -9,6 +9,7 @@
 	Chris Bruce, chris.bruce@dsvolition.com, 12/3/2018
 """
 
+from os import name, system
 import sys
 from importlib import reload
 
@@ -59,33 +60,33 @@ class ledStrip( QWidget ):
 		Chris Bruce, chris.bruce@dsvolition.com, 12/3/2018
 	"""
 
-	TITLE					= "LED Strip Simluation"
-	VERSION				= 1.0
-	SIZE					= [ 300, 400 ]
+	TITLE				= "LED Strip Simluation"
+	VERSION			= 1.0
+	SIZE				= [ 300, 400 ]
 
-	PIXEL_MIN			= 8
-	PIXEL_MAX			= 256
-	PIXEL_NUM			= 32
+	LED_MIN			= 8
+	LED_MAX			= 256
+	LED_NUM			= 32
 
-	PIXEL_SIZE_MIN		= 8
-	PIXEL_SIZE_MAX		= 64
+	LED_SIZE_MIN	= 8
+	LED_SIZE_MAX	= 64
 
-	STRIP_COLOR			= const.grey # default RGB value for the strip
-	PIXEL_COLOR			= Color( 12, 12, 12 ) # default RGB value for LED pixel
+	STRIP_COLOR		= const.grey # default RGB value for the strip
+	LED_COLOR		= Color( 12, 12, 12 ) # default RGB value for LED pixel
 
 	#STYLE_SHEET			= "QWidget{ background-color: rgb{} };".format( str( STRIP_COLOR ) )
-	STYLE_SHEET			= "QWidget{ background-color:white};"
+	STYLE_SHEET		= "QWidget{ background-color:white};"
 
 
 
 	def __init__( self, app ):
 		super( ledStrip, self ).__init__( )
 
-		self.app					= app
+		self.app				= app
 
-		self.pixels				= [ ]		# array of LED pixels
-		self.pixel_size		= 32		# size of each LED pixel
-		self.pixel_space		= 16		# size of space between each LED pixel
+		self.leds			= [ ]		# array of LED pixels
+		self.led_size		= 32		# size of each LED pixel
+		self.led_space		= 16		# size of space between each LED pixel
 
 		self.paused				= False
 		self.testing			= False
@@ -112,11 +113,11 @@ class ledStrip( QWidget ):
 
 		self.setWindowTitle( '{} - ver. {}'.format( self.TITLE, self.VERSION ) )
 		self.main_layout = QVBoxLayout( )
-		self.main_layout.setSpacing( self.pixel_space )
+		self.main_layout.setSpacing( self.led_space )
 		self.setLayout( self.main_layout )
 
 		self.setAutoFillBackground( True )
-		self._strip_color( )
+		self._set_strip_color( )
 
 		# size_policy = QSizePolicy( )
 		# size_policy.setHorizontalPolicy( QSizePolicy.Minimum )
@@ -155,23 +156,23 @@ class ledStrip( QWidget ):
 
 		label_num	= QLabel( 'LEDs:' )
 		spin_num		= QSpinBox( )
-		spin_num.setRange( self.PIXEL_MIN, self.PIXEL_MAX )
+		spin_num.setRange( self.LED_MIN, self.LED_MAX )
 		spin_num.setFixedWidth( 64 )
-		spin_num.setValue( self.PIXEL_NUM )
+		spin_num.setValue( self.LED_NUM )
 		spin_num.valueChanged.connect( self._on_spin_num_changed )
 
 		label_size	= QLabel( 'Size:' )
 		spin_size	= QSpinBox( )
-		spin_size.setRange( self.PIXEL_SIZE_MIN, self.PIXEL_SIZE_MAX )
+		spin_size.setRange( self.LED_SIZE_MIN, self.LED_SIZE_MAX )
 		spin_size.setFixedWidth( 64 )
-		spin_size.setValue( self.pixel_size )
+		spin_size.setValue( self.led_size )
 		spin_size.valueChanged.connect( self._on_spin_size_changed )
 
 		label_space	= QLabel( 'Space:' )
 		spin_space	= QSpinBox( )
 		spin_space.setRange( 0, 256 )
 		spin_space.setFixedWidth( 64 )
-		spin_space.setValue( self.pixel_space )
+		spin_space.setValue( self.led_space )
 		spin_space.valueChanged.connect( self._on_spin_space_changed )
 
 		self.tests	= QComboBox( )
@@ -188,6 +189,9 @@ class ledStrip( QWidget ):
 		btn_stop		= QPushButton( 'Stop' )
 		btn_stop.pressed.connect( self._on_btn_stop_pressed )
 
+		btn_query		= QPushButton( '??' )
+		btn_query.pressed.connect( self._on_btn_query_pressed )
+
 		layout.addStretch( )
 		layout.addWidget( label_num )
 		layout.addWidget( spin_num )
@@ -199,12 +203,13 @@ class ledStrip( QWidget ):
 		layout.addWidget( btn_start )
 		layout.addWidget( btn_pause )
 		layout.addWidget( btn_stop )
+		layout.addWidget( btn_query )
 		layout.addStretch( )
 
 		return widget
 
 
-	def _create_pixel( self, color ):
+	def _create_led( self, color ):
 		"""
 		[description]
 
@@ -225,16 +230,16 @@ class ledStrip( QWidget ):
 			Chris Bruce, chris.bruce@dsvolition.com, 12/3/2018
 		"""
 
-		pixel = QFrame( )
-		pixel.setFixedSize( QSize( self.pixel_size, self.pixel_size ) )
-		pixel.setFrameShape( QFrame.Box )
-		pixel.setFrameShadow( QFrame.Raised )
-		pixel.setLineWidth( 0 )
-		pixel.setMidLineWidth ( self.pixel_size / 8 )
+		led = QFrame( )
+		led.setFixedSize( QSize( self.led_size, self.led_size ) )
+		led.setFrameShape( QFrame.Box )
+		led.setFrameShadow( QFrame.Raised )
+		led.setLineWidth( 0 )
+		led.setMidLineWidth ( self.led_size / 8 )
 
-		pixel.setStyleSheet( "background-color: rgb{}".format( color ) )
+		led.setStyleSheet( "background-color: rgb{}".format( color ) )
 
-		return pixel
+		return led
 
 
 	def _create_strip( self ):
@@ -260,18 +265,18 @@ class ledStrip( QWidget ):
 
 		self.strip_widget		= QWidget( )
 		self.strip_layout		= QHBoxLayout( )
-		self.strip_layout.setSpacing( self.pixel_space )
+		self.strip_layout.setSpacing( self.led_space )
 		self.strip_widget.setLayout( self.strip_layout )
 
-		for i in range( self.PIXEL_NUM ):
-			pixel = self._create_pixel( self.PIXEL_COLOR )
-			self.pixels.append( pixel )
-			self.strip_layout.addWidget( pixel )
+		for i in range( self.LED_NUM ):
+			led = self._create_led( self.LED_COLOR )
+			self.leds.append( led )
+			self.strip_layout.addWidget( led )
 
 		return self.strip_widget
 
 
-	def _strip_color( self, color = STRIP_COLOR ):
+	def _set_strip_color( self, color = STRIP_COLOR ):
 		"""
 		Change the color of the strip
 
@@ -346,19 +351,19 @@ class ledStrip( QWidget ):
 			Chris Bruce, chris.bruce@dsvolition.com, 12/3/2018
 		"""
 
-		num_pixels = self.numPixels( )
+		num_leds = self.get_num_leds( )
 
-		if value > num_pixels :
-			for _ in range( value - num_pixels ):
-				pixel = self._create_pixel( self.PIXEL_COLOR )
-				self.pixels.append( pixel )
-				self.strip_layout.addWidget( pixel )
-		elif value < len( self.pixels ):
-			for _ in range( num_pixels - value ):
-				pixel = self.pixels[ -1 ]
-				self.strip_layout.removeWidget( pixel )
-				self.pixels.pop( )
-				pixel.deleteLater( )
+		if value > num_leds :
+			for _ in range( value - num_leds ):
+				led = self._create_led( self.LED_COLOR )
+				self.leds.append( led )
+				self.strip_layout.addWidget( led )
+		elif value < len( self.leds ):
+			for _ in range( num_leds - value ):
+				led = self.leds[ -1 ]
+				self.strip_layout.removeWidget( led )
+				self.leds.pop( )
+				led.deleteLater( )
 
 		self._update_gui( )
 
@@ -384,10 +389,10 @@ class ledStrip( QWidget ):
 			Chris Bruce, chris.bruce@dsvolition.com, 12/3/2018
 		"""
 
-		for pixel in self.pixels:
-			self.pixel_size = value
-			pixel.setFixedSize( QSize( self.pixel_size, self.pixel_size ) )
-			pixel.setMidLineWidth ( self.pixel_size / 8 )
+		for led in self.leds:
+			self.led_size = value
+			led.setFixedSize( QSize( self.led_size, self.led_size ) )
+			led.setMidLineWidth ( self.led_size / 8 )
 
 		self._update_gui( )
 
@@ -413,8 +418,8 @@ class ledStrip( QWidget ):
 			Chris Bruce, chris.bruce@dsvolition.com, 12/3/2018
 		"""
 		
-		self.pixel_space = value
-		self.strip_layout.setSpacing( self.pixel_space )
+		self.led_space = value
+		self.strip_layout.setSpacing( self.led_space )
 
 		self._update_gui( )
 
@@ -439,7 +444,16 @@ class ledStrip( QWidget ):
 		return True
 
 
-	def numPixels( self ):
+	def _on_btn_query_pressed( self ):
+		print( 'self.leds( {} ) :\n'.format( type( self.leds ) ) )
+
+		for i, p in enumerate( self.leds ):
+			print( '[ {} ] : {}'.format( i, p.styleSheet( ) ) )
+
+		print( 'self.testing : {} '.format( self.testing ) )
+
+
+	def get_num_leds( self ):
 		"""
 		[description]
 
@@ -460,10 +474,10 @@ class ledStrip( QWidget ):
 			Chris Bruce, chris.bruce@dsvolition.com, 12/3/2018
 		"""
 
-		return len( self.pixels )
+		return len( self.leds )
 
 
-	def setPixelColor( self, i, color ):
+	def set_led_color( self, i, color ):
 		"""
 		[description]
 
@@ -486,13 +500,13 @@ class ledStrip( QWidget ):
 		"""
 
 		if color == 0:
-			color = self.PIXEL_COLOR
+			color = self.LED_COLOR
 
-		if i > ( self.numPixels( ) - 1 ):
-			i -= self.numPixels( )
+		if i > ( self.get_num_leds( ) - 1 ):
+			i -= self.get_num_leds( )
 
-		pixel = self.pixels[ i ]
-		pixel.setStyleSheet( "background-color: rgb{}".format( color ) )
+		led = self.leds[ i ]
+		led.setStyleSheet( "background-color: rgb{}".format( str( color ) ) )
 
 		return True
 
@@ -530,6 +544,7 @@ def create_gui( app ):
 
 if __name__ == '__main__':
 	app = QApplication( sys.argv )
+	os.system( 'cls' if os.name == 'nt' else 'clear' )
 
 	led_strip	= ledStrip( )
 	led_strip.show( )

@@ -32,14 +32,14 @@ def gradient( color1, color2, length = 6, mirror = False ):
 		half	= int( length / 2 )
 		for i in range( 0, half ):
 			bias				= 1.0 - ( float( i ) / half )
-			pixels[ i ]		= pixels[ i ].blend( color2, bias = bias )
+			pixels[ i ].blend( color2, bias = bias )
 		for i in range( half, length ):
 			bias				= float( i - half ) / half
-			pixels[ i ]		= pixels[ i ].blend( color2, bias = bias )
+			pixels[ i ].blend( color2, bias = bias )
 	else:
 		for i in range( length ):
 			bias				= 1.0 - ( float( i ) / length )
-			pixels[ i ]		= pixels[ i ].blend( color2, bias = bias )
+			pixels[ i ].blend( color2, bias = bias )
 
 
 	return pixels

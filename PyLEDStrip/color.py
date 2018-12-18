@@ -30,9 +30,11 @@ class Color( tuple ):
 
 
 	def __init__( self, _r, _g, _b ):
-		self.red		= self.r	= sorted( ( 0, abs( int( _r ) ), 255 ) )[ 1 ]
-		self.green	= self.g	= sorted( ( 0, abs( int( _g ) ), 255 ) )[ 1 ]
-		self.blue	= self.b	= sorted( ( 0, abs( int( _b ) ), 255 ) )[ 1 ]
+		super( Color, self ).__init__( )
+
+		self.r	= self._clamp( _r )
+		self.g	= self._clamp( _g )
+		self.b	= self._clamp( _b )
 
 
 	def __str__( self ):
@@ -41,14 +43,9 @@ class Color( tuple ):
 
 	def __add__( self, color ):
 		if isinstance( color, Color ):
-			r	= color.r
-			g	= color.g
-			b	= color.b
-
-		if isinstance( color, float ) or isinstance( color, int ):
-			r	= int( 255.0 * color )
-			g	= int( 255.0 * color )
-			b	= int( 255.0 * color )
+			r, g, b	= color
+		elif isinstance( color, float ) or isinstance( color, int ):
+			r, g, b	= [ int( 255.0 * color ) ] * 3
 
 		r	+= self.r
 		g	+= self.g
@@ -59,14 +56,9 @@ class Color( tuple ):
 
 	def __sub__( self, color ):
 		if isinstance( color, Color ):
-			r	= color.r
-			g	= color.g
-			b	= color.b
-
-		if isinstance( color, float ) or isinstance( color, int ):
-			r	= int( 255.0 * color )
-			g	= int( 255.0 * color )
-			b	= int( 255.0 * color )
+			r, g, b	= color
+		elif isinstance( color, float ) or isinstance( color, int ):
+			r, g, b	= [ int( 255.0 * color ) ] * 3
 
 		r	-= self.r
 		g	-= self.g
@@ -77,14 +69,9 @@ class Color( tuple ):
 
 	def __mul__( self, color ):
 		if isinstance( color, Color ):
-			r	= color.r
-			g	= color.g
-			b	= color.b
-
-		if isinstance( color, float ) or isinstance( color, int ):
-			r	= int( 255.0 * color )
-			g	= int( 255.0 * color )
-			b	= int( 255.0 * color )
+			r, g, b	= color
+		elif isinstance( color, float ) or isinstance( color, int ):
+			r, g, b	= [ int( 255.0 * color ) ] * 3
 
 		r	= ( self.r / 255 * r / 255 ) * 255
 		g	= ( self.g / 255 * g / 255 ) * 255
@@ -105,6 +92,48 @@ class Color( tuple ):
 
 	# __truediv__ = __div__
 
+	def _clamp( self, value ):
+		return sorted( ( 0, abs( int( value ) ), 255 ) )[ 1 ]
+
+
+	def add( self, color ):
+		if isinstance( color, Color ):
+			r, g, b	= color
+		elif isinstance( color, float ) or isinstance( color, int ):
+			r, g, b	= [ int( 255.0 * color ) ] * 3
+
+		self.r	= self._clamp( self.r + r )
+		self.g	= self._clamp( self.g + g )
+		self.b	= self._clamp( self.b + b )
+
+		return self
+
+
+	def subtract( self, color ):
+		if isinstance( color, Color ):
+			r, g, b	= color
+		elif isinstance( color, float ) or isinstance( color, int ):
+			r, g, b	= [ int( 255.0 * color ) ] * 3
+
+		self.r	= self._clamp( self.r - r )
+		self.g	= self._clamp( self.g - g )
+		self.b	= self._clamp( self.b - b )
+
+		return self
+
+
+	def multiply( self, color ):
+		if isinstance( color, Color ):
+			r, g, b	= color
+		elif isinstance( color, float ) or isinstance( color, int ):
+			r, g, b	= [ int( 255.0 * color ) ] * 3
+
+		self.r	= self._clamp( self.r * r )
+		self.g	= self._clamp( self.g * g )
+		self.b	= self._clamp( self.b * b )
+
+		return self
+
 
 	def blend( self, color, bias = 0.5 ):
 		"""
@@ -115,13 +144,17 @@ class Color( tuple ):
 			Chris Bruce, chris.bruce@dsvolition.com, 12/3/2018
 		"""
 
-		if isinstance( color, tuple ) or isinstance( color, list ):
-			color	= Color( *color )
+		if isinstance( color, Color ):
+			r, g, b	= color
+		elif isinstance( color, float ) or isinstance( color, int ):
+			r, g, b	= [ int( 255.0 * color ) ] * 3
 
-		if not isinstance( color, Color ):
-			return None
+		r	= ( r * ( 1 - bias ) ) + ( self.r * bias )
+		g	= ( g * ( 1 - bias ) ) + ( self.g * bias )
+		b	= ( b * ( 1 - bias ) ) + ( self.b * bias )
 
-		inverse	= 1.0 - bias
-		color		= ( self * bias ) + ( color * inverse )
+		self.r	= self._clamp( r )
+		self.g	= self._clamp( g )
+		self.b	= self._clamp( b )
 
-		return color
+		return self
